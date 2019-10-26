@@ -37,39 +37,6 @@ mp_bitcnt_t find_leftmost_one_bit(mpz_t value) {
    return(-1);
 }
 
-void power_module(mpz_t result, mpz_t base, mpz_t power, mpz_t n) {
-   mpz_t i, num_multiply, remainder_multiply, intermediate_result;
-
-   // Inicializa variáveis locais
-   mpz_init(i);
-   mpz_init(num_multiply);
-   mpz_init(remainder_multiply);
-   mpz_init(intermediate_result);
-   
-   /*
-    * Cada iteração tem uma multiplicação pela base.
-    * Logo, a cada 2 iterações calculamos o quadrado 
-    * (por isso estamos dividindo por 2)
-    * Ai com o resto fazemos a ultima multiplicação.
-   */
-   mpz_set_ui(result, 1);
-
-   mpz_tdiv_qr_ui(num_multiply, remainder_multiply, power, 2);
-
-   for(mpz_set_ui(i, 0);  mpz_cmp(i, num_multiply) < 0; mpz_add_ui(i, i, 1)) {
-      mpz_mul(intermediate_result, base, base);
-      mpz_tdiv_r(intermediate_result, intermediate_result, n);
-      mpz_mul(result, intermediate_result, intermediate_result);
-   }
-
-   if(mpz_cmp_ui(remainder_multiply, 0)) {
-      mpz_mul(result, result, base);
-      mpz_tdiv_r(result, result, n);
-   }
-
-   mpz_tdiv_r(result, result, n);
-}
-
 void sqr_n_multiply_module(mpz_t result, mpz_t base, mpz_t power, mpz_t n) {
    int bit, index;
 
@@ -87,10 +54,6 @@ void sqr_n_multiply_module(mpz_t result, mpz_t base, mpz_t power, mpz_t n) {
          mpz_tdiv_r(result, result, n);
       }
    }
-}
-
-void sqr_n_multiply(mpz_t base, mpz_t power, mpz_t result) {
-   
 }
 
 void generate_keys() {
