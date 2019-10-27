@@ -91,10 +91,12 @@ void extended_euclidean(mpz_t gdc, mpz_t modular_inverse, mpz_t a, mpz_t b) {
    
    mpz_add_ui(gdc, remainder1, 0);
    mpz_add_ui(modular_inverse, t1, 0);
+
+   mpz_clears(remainder1, remainder2, s, t, s1, s2, t1, t2, quotient, aux);
 }
 
 /*
- * Calcula o phi de n em que n = p*q
+ * Calcula o phi(n) em que n = p*q
  * 
  * @returns result - Calculo de phi de n
  * @params p - Primo composto em n
@@ -110,10 +112,35 @@ void calc_phi_n(mpz_t result, mpz_t p, mpz_t q) {
    mpz_sub_ui(p_aux, p, 1);
    mpz_sub_ui(q_aux, q, 1);
    mpz_mul(result, p_aux, q_aux);
+
+   mpz_clears(p_aux, q_aux);
 }
 
 /*
- * Gera chaves públicas e privadas para RSA
+ * Gera número primo aleatório
+ * 
+ * @returns prime - Varíavel que irá armazenar o número
+ * @params size - Tamanho máximo de bits do número
+*/
+void generate_prime(mpz_t prime, int size) {
+   mpz_t max_number;
+   gmp_randstate_t state;
+
+   mpz_init(max_number);
+
+   mpz_ui_pow_ui(max_number, 2, size);
+   gmp_randinit_default(state);
+
+   do {
+      mpz_urandomm(prime, state, max_number);
+      mpz_nextprime(prime, prime);
+   } while(mpz_cmp(prime, max_number) >= 0);
+
+   mpz_clear(max_number);
+}
+
+/*
+ * Gera chaves públicas e privadas para o RSA
 */
 void generate_rsa_keys() {
    mpz_t p, q, n, phi_n, e, d, gdc;
@@ -134,6 +161,10 @@ void generate_rsa_keys() {
    mpz_init_set_str(q, "13", 10);
    mpz_init_set_str(e, "23", 10);
 
+   //generate_prime(prime, 256);
+
+   //generate_expoent_e(e);
+
    // Calcula n
    mpz_mul(n, p, q);
 
@@ -151,6 +182,8 @@ void generate_rsa_keys() {
    gmp_printf("Expoente privado: %Zd\n", d);
    gmp_printf("Primo p: %Zd\n", p);
    gmp_printf("Primo q: %Zd\n", q);
+
+   mpz_clears(p, q, n, phi_n, e, d, gdc);
 }
 
 /*
@@ -221,6 +254,8 @@ void encript_decript() {
    // Saída
    printf("Base: 10\n");
    gmp_printf("Mensagem: %Zd\n", result);
+
+   mpz_clears(n, ed, mc, result);
 }
 
 int main() {
