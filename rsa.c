@@ -92,7 +92,16 @@ void extended_euclidean(mpz_t gdc, mpz_t modular_inverse, mpz_t a, mpz_t b) {
    mpz_add_ui(gdc, remainder1, 0);
    mpz_add_ui(modular_inverse, t1, 0);
 
-   mpz_clears(remainder1, remainder2, s, t, s1, s2, t1, t2, quotient, aux);
+   mpz_clear(remainder1);
+   mpz_clear(remainder2);
+   mpz_clear(s);
+   mpz_clear(s1);
+   mpz_clear(s2);
+   mpz_clear(t);
+   mpz_clear(t1);
+   mpz_clear(t2);
+   mpz_clear(quotient);
+   mpz_clear(aux);
 }
 
 /*
@@ -113,7 +122,8 @@ void calc_phi_n(mpz_t result, mpz_t p, mpz_t q) {
    mpz_sub_ui(q_aux, q, 1);
    mpz_mul(result, p_aux, q_aux);
 
-   mpz_clears(p_aux, q_aux);
+   mpz_clear(p_aux);
+   mpz_clear(q_aux);
 }
 
 /*
@@ -136,6 +146,27 @@ void generate_prime(mpz_t prime, int size) {
       mpz_nextprime(prime, prime);
    } while(mpz_cmp(prime, max_number) >= 0);
 
+   gmp_randclear(state);
+   mpz_clear(max_number);
+}
+
+/*
+ * Gera expoente e aleatório
+ * 
+ * @returns e - Varíavel que irá armazenar o número
+ * @params size - Tamanho máximo de bits do número
+*/
+void generate_expoent_e(mpz_t e, int size) {
+   mpz_t max_number;
+   gmp_randstate_t state;
+
+   mpz_init(max_number);
+
+   mpz_ui_pow_ui(max_number, 2, size);
+   gmp_randinit_mt(state);
+   mpz_urandomm(e, state, max_number);
+
+   gmp_randclear(state);
    mpz_clear(max_number);
 }
 
@@ -146,6 +177,7 @@ void generate_rsa_keys() {
    mpz_t p, q, n, phi_n, e, d, gdc;
    
    mpz_init(phi_n);
+   mpz_init(e);
    mpz_init(d);
    mpz_init(gdc);
    mpz_init(n);
@@ -159,21 +191,29 @@ void generate_rsa_keys() {
 
    mpz_init_set_str(p, "127", 10);
    mpz_init_set_str(q, "13", 10);
-   mpz_init_set_str(e, "23", 10);
+   //mpz_init_set_str(e, "23", 10);
 
    //generate_prime(prime, 256);
 
-   //generate_expoent_e(e);
+   /* 
+    * Gera novo expoent e enquanto gdc(phi(n), e) != 1, ou seja,
+    * não forem coprimos
+   */ 
+   do {
+      // O gerador de números aleatórios está sempre gerando o mesmo número
+      generate_expoent_e(e, 128);
+      gmp_printf("Expoente publico: %Zd\n", e);
 
-   // Calcula n
-   mpz_mul(n, p, q);
+      // Calcula n
+      mpz_mul(n, p, q);
 
-   // Calcula phi(n)
-   calc_phi_n(phi_n, p, q);
+      // Calcula phi(n)
+      calc_phi_n(phi_n, p, q);
 
-   // Calcula d
-   extended_euclidean(gdc, d, phi_n, e);
-   if(mpz_cmp_ui(d, 0) < 0) mpz_add(d, d, phi_n);
+      // Calcula d
+      extended_euclidean(gdc, d, phi_n, e);
+      if(mpz_cmp_ui(d, 0) < 0) mpz_add(d, d, phi_n);
+   } while(mpz_cmp_ui(gdc, 1) != 0);
 
    // Saída
    printf("Base: 10\n");
