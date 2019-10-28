@@ -1,6 +1,8 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<gmp.h>
+#include <time.h> 
+
 
 #define RSA_MAX_NUM_BITS 2048
 
@@ -135,12 +137,15 @@ void calc_phi_n(mpz_t result, mpz_t p, mpz_t q) {
 void generate_prime(mpz_t prime, int size) {
    mpz_t max_number;
    gmp_randstate_t state;
+   unsigned long seed;
 
+   //Inicialização
    mpz_init(max_number);
 
+   //max_number = 2^size
    mpz_ui_pow_ui(max_number, 2, size);
    gmp_randinit_default(state);
-
+   gmp_randseed_ui(state, seed);
    do {
       mpz_urandomm(prime, state, max_number);
       mpz_nextprime(prime, prime);
@@ -159,11 +164,15 @@ void generate_prime(mpz_t prime, int size) {
 void generate_expoent_e(mpz_t e, int size) {
    mpz_t max_number;
    gmp_randstate_t state;
+   unsigned long seed = time(NULL);
 
+   
    mpz_init(max_number);
 
    mpz_ui_pow_ui(max_number, 2, size);
    gmp_randinit_mt(state);
+   gmp_randseed_ui(state, seed);
+
    mpz_urandomm(e, state, max_number);
 
    gmp_randclear(state);
@@ -174,13 +183,15 @@ void generate_expoent_e(mpz_t e, int size) {
  * Gera chaves públicas e privadas para o RSA
 */
 void generate_rsa_keys() {
-   mpz_t p, q, n, phi_n, e, d, gdc;
+   mpz_t p, q, n, phi_n, e, d, gdc,prime;
    
    mpz_init(phi_n);
    mpz_init(e);
    mpz_init(d);
    mpz_init(gdc);
    mpz_init(n);
+   mpz_init(prime);
+
 
    // TODO: Gerar os primos 'p', 'q' e o expoente 'e'
 
@@ -188,19 +199,19 @@ void generate_rsa_keys() {
    // mpz_init_set_str(p, "11", 10);
    // mpz_init_set_str(q, "13", 10);
    // mpz_init_set_str(e, "23", 10);
-
-   mpz_init_set_str(p, "127", 10);
-   mpz_init_set_str(q, "13", 10);
+   generate_prime(prime, 256);
+   mpz_init_set(p,prime);
+   generate_prime(prime, 256);  
+   mpz_init_set(q, prime);
    //mpz_init_set_str(e, "23", 10);
 
-   //generate_prime(prime, 256);
+   
 
    /* 
     * Gera novo expoent e enquanto gdc(phi(n), e) != 1, ou seja,
     * não forem coprimos
    */ 
    do {
-      // O gerador de números aleatórios está sempre gerando o mesmo número
       generate_expoent_e(e, 128);
       gmp_printf("Expoente publico: %Zd\n", e);
 
@@ -223,7 +234,14 @@ void generate_rsa_keys() {
    gmp_printf("Primo p: %Zd\n", p);
    gmp_printf("Primo q: %Zd\n", q);
 
-   mpz_clears(p, q, n, phi_n, e, d, gdc);
+   mpz_clear(p);
+   mpz_clear(q); 
+   mpz_clear(n);
+   mpz_clear(phi_n);
+   mpz_clear(e);
+   mpz_clear(d);
+   mpz_clear(gdc); 
+   mpz_clear(prime);
 }
 
 /*
@@ -284,6 +302,7 @@ void encript_decript() {
    mpz_init(result);
 
    scanf("%d", &base);
+
    read_entry(n, base);
    read_entry(ed, base);
    read_entry(mc, base);
