@@ -1,25 +1,19 @@
+/*
+ * @Author Michael dos Santos
+ * @RA 726572
+ * 
+ * @Author Victor Watanabe
+ * @RA 7265XX
+*/
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<gmp.h>
 #include <time.h> 
 
-
 #define RSA_MAX_NUM_BITS 2048
 
-// TODO: Parte 1
-/*
- * 1 - Gerar primos p e q (pendente)
- * 2 - Calcular n (concluído)
- * 3 - Calcular phi(n) (concluído)
- * 4 - Gerar e até que e seja coprimo de phi(n) (gdc = 1) (pendente)
- * 5 - Obter inverso modular (d) (concluído)
-*/
-
-// TODO: Parte 2 (Concluído)
-/*
- * 1 - Ler chave base, modulo (n), expoente (e/d), mensagem (m/c) (concluído)
- * 2 - Fazer encriptação/decriptação (quadrado e multiplicação) (concluído)
-*/
+gmp_randstate_t state;
 
 /*
  * Lê um número digitado no input
@@ -57,8 +51,8 @@ void extended_euclidean(mpz_t gdc, mpz_t modular_inverse, mpz_t a, mpz_t b) {
    mpz_init(quotient);
    mpz_init(aux);
 
-   mpz_add_ui(remainder1, a, 0);
-   mpz_add_ui(remainder2, b, 0);
+   mpz_set(remainder1, a);
+   mpz_set(remainder2, b);
    mpz_set_ui(s1, 1);
    mpz_set_ui(s2, 0);
    mpz_set_ui(t1, 0);
@@ -66,8 +60,8 @@ void extended_euclidean(mpz_t gdc, mpz_t modular_inverse, mpz_t a, mpz_t b) {
 
    do {
       mpz_tdiv_qr(quotient, aux, remainder1, remainder2);
-      mpz_add_ui(remainder1, remainder2, 0);
-      mpz_add_ui(remainder2, aux, 0);
+      mpz_set(remainder1, remainder2);
+      mpz_set(remainder2, aux);
       
       /*
        * s = s1 - quotient * s2;
@@ -76,8 +70,8 @@ void extended_euclidean(mpz_t gdc, mpz_t modular_inverse, mpz_t a, mpz_t b) {
       */
       mpz_mul(aux, quotient, s2);
       mpz_sub(s, s1, aux);
-      mpz_add_ui(s1, s2, 0);
-      mpz_add_ui(s2, s, 0);
+      mpz_set(s1, s2);
+      mpz_set(s2, s);
       
       /*
        * t = t1 - quotient * t2;
@@ -86,13 +80,13 @@ void extended_euclidean(mpz_t gdc, mpz_t modular_inverse, mpz_t a, mpz_t b) {
       */
       mpz_mul(aux, quotient, t2);
       mpz_sub(t, t1, aux);
-      mpz_add_ui(t1, t2, 0);
-      mpz_add_ui(t2, t, 0);
+      mpz_set(t1, t2);
+      mpz_set(t2, t);
 
    } while(mpz_cmp_ui(remainder2, 0) != 0);
    
-   mpz_add_ui(gdc, remainder1, 0);
-   mpz_add_ui(modular_inverse, t1, 0);
+   mpz_set(gdc, remainder1);
+   mpz_set(modular_inverse, t1);
 
    mpz_clear(remainder1);
    mpz_clear(remainder2);
@@ -136,22 +130,17 @@ void calc_phi_n(mpz_t result, mpz_t p, mpz_t q) {
 */
 void generate_prime(mpz_t prime, int size) {
    mpz_t max_number;
-   gmp_randstate_t state;
-   unsigned long seed;
 
-   //Inicialização
+   // Inicialização
    mpz_init(max_number);
 
    //max_number = 2^size
    mpz_ui_pow_ui(max_number, 2, size);
-   gmp_randinit_default(state);
-   gmp_randseed_ui(state, seed);
    do {
-      mpz_urandomm(prime, state, max_number);
+      mpz_urandomb(prime, state, size);
       mpz_nextprime(prime, prime);
    } while(mpz_cmp(prime, max_number) >= 0);
 
-   gmp_randclear(state);
    mpz_clear(max_number);
 }
 
@@ -162,50 +151,32 @@ void generate_prime(mpz_t prime, int size) {
  * @params size - Tamanho máximo de bits do número
 */
 void generate_expoent_e(mpz_t e, int size) {
-   mpz_t max_number;
-   gmp_randstate_t state;
-   unsigned long seed = time(NULL);
-
-   
-   mpz_init(max_number);
-
-   mpz_ui_pow_ui(max_number, 2, size);
-   gmp_randinit_mt(state);
-   gmp_randseed_ui(state, seed);
-
-   mpz_urandomm(e, state, max_number);
-
-   gmp_randclear(state);
-   mpz_clear(max_number);
+   mpz_urandomb(e, state, size);
 }
 
 /*
  * Gera chaves públicas e privadas para o RSA
 */
 void generate_rsa_keys() {
-   mpz_t p, q, n, phi_n, e, d, gdc,prime;
+   int key_size;
+   mpz_t p, q, n, phi_n, e, d, gdc;
    
+   mpz_init(p);
+   mpz_init(q);
+   mpz_init(n);
    mpz_init(phi_n);
    mpz_init(e);
    mpz_init(d);
    mpz_init(gdc);
-   mpz_init(n);
-   mpz_init(prime);
 
-
-   // TODO: Gerar os primos 'p', 'q' e o expoente 'e'
-
-   // Irei considerar que estou recebendo os primos 'p' e 'q' e 'e'
+   printf("Tamanho da chave: \n");
+   scanf("%d", &key_size);
+   
    // mpz_init_set_str(p, "11", 10);
    // mpz_init_set_str(q, "13", 10);
    // mpz_init_set_str(e, "23", 10);
-   generate_prime(prime, 256);
-   mpz_init_set(p,prime);
-   generate_prime(prime, 256);  
-   mpz_init_set(q, prime);
-   //mpz_init_set_str(e, "23", 10);
-
-   
+   generate_prime(p, key_size / 2);
+   generate_prime(q, key_size / 2);  
 
    /* 
     * Gera novo expoent e enquanto gdc(phi(n), e) != 1, ou seja,
@@ -241,7 +212,6 @@ void generate_rsa_keys() {
    mpz_clear(e);
    mpz_clear(d);
    mpz_clear(gdc); 
-   mpz_clear(prime);
 }
 
 /*
@@ -272,7 +242,7 @@ mp_bitcnt_t find_leftmost_one_bit(mpz_t value) {
 void sqr_n_multiply_module(mpz_t result, mpz_t base, mpz_t power, mpz_t n) {
    int bit, index;
 
-   mpz_add_ui(result, base, 0);
+   mpz_set(result, base);
    
    index = find_leftmost_one_bit(power);
 
@@ -319,6 +289,11 @@ void encript_decript() {
 
 int main() {
    int option;
+   unsigned long seed = time(NULL);
+
+   // Inicializa random
+   gmp_randinit_default(state);
+   gmp_randseed_ui(state, seed);
 
    printf("O que deseja fazer?\n");
    printf("0 - Gerar chaves\n");
@@ -340,5 +315,6 @@ int main() {
          break;
    }
 
+   gmp_randclear(state);
    return 0;
 }
