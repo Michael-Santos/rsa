@@ -184,7 +184,6 @@ void generate_rsa_keys() {
    */ 
    do {
       generate_expoent_e(e, 128);
-      gmp_printf("Expoente publico: %Zd\n", e);
 
       // Calcula n
       mpz_mul(n, p, q);
